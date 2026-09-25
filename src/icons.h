@@ -1,19 +1,27 @@
 #pragma once
+#include "settings.h"
+
 #include <QIcon>
+#include <QtGlobal>
 #include <TritonController.h>
-#include <array>
-#include <algorithm>
 
-class IconGenerator
-{
-private:
+class IconGenerator {
+ private:
   // cache required otherwise setIcon will increase in memory over time (assuming it has it's own cache or something)
-  std::array<QIcon, 29> iconCache{};
-  bool isDarkmode;
-public:
-  IconGenerator();
-  ~IconGenerator();
+  int cachedKey = -1;
+  QIcon cachedIcon;
+  bool isDarkmode = true;
+  IconAppearance defaultStyle;
+  IconAppearance style;
 
-  QIcon createBatteryIcon(const TritonBatteryStatus_t* battery);
-  QIcon renderIcon(int filledPixels, bool charging, bool disconnected, uint8_t batteryLevel);
+ public:
+  IconGenerator();
+
+  QIcon createIcon(const TritonBatteryStatus_t* battery, TrayIconMode mode, qint64 animationElapsedMs = 0);
+  IconAppearance defaultAppearance() const;
+  void setAppearance(const IconAppearance& appearance);
+
+ private:
+  QIcon renderIcon(int percentage, int displayedFillPercentage, bool charging, bool disconnected,
+                   TrayIconMode mode) const;
 };

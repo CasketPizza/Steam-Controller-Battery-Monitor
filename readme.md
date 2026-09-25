@@ -1,75 +1,154 @@
-# Steam Controller Battery Monitor
-  A lightweight, cross-platform tray icon to get information about the steam controller's battery
+# Extra Changes in This Fork
 
-  I don't know why there isnt a good place to get this information normally
+- Added direct support for the Steam Controller (2026) wired interface and wireless puck.
+- Added optional Big Picture launch on controller wake and reliable Big Picture exit handling.
+- Added Steam and Friends launch actions with saved, monitor-relative window layouts.
+- Added battery, number, and combined tray modes with live appearance customization.
+- Added state-specific battery fill/stroke and text/stroke colors for normal, low-battery, and charging states.
+- Added static, five-stage, and smooth charging-meter animations.
+- Added native Windows and X11 window-management backends with safe Wayland degradation.
+- Added a custom Windows application icon and portable Windows release bundle.
 
-![](https://img.pixelator.xyz/V5hxYuYw.png)
+---
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N6145I0V)
+# Steam Controller Utility
 
-No need to donate, though is greatly appreciated!
+A lightweight Qt 6 tray utility for the Steam Controller (2026), based on
+[Pixel1011/Steam-Controller-Battery-Monitor](https://github.com/Pixel1011/Steam-Controller-Battery-Monitor).
 
+The utility monitors the controller through HIDAPI, displays its battery level, and coordinates Steam's desktop and
+Big Picture interfaces.
 
-## How To
+## Features
 
+- Can open `steam://open/bigpicture` when Raw HID controller reports resume after a connect or wake. This is opt-in and
+  defaults off so upgrading retains battery-monitor-first behavior. The activity monitor handles controller-state
+  reports (`0x42`, `0x45`, `0x47`) and puck connect statuses (`0x46`, `0x79`, state `2`).
+- Detects the Big Picture window lifecycle independently of controller disconnects.
+- Opens the normal Steam desktop UI after Big Picture exits.
+- Optionally opens Friends after Big Picture exits. This defaults to enabled and is persisted.
+- Saves and restores monitor-relative layouts for the Steam and Friends windows.
+- Provides battery, numeric percentage, and combined battery/percentage tray icon modes.
+- Provides a tray appearance editor with live previews, separate battery fill/stroke and text/stroke colors for normal,
+  low-battery, and charging states, plus empty/disconnected colors, typography, and combined-number alignment. Changes
+  are saved and applied to the tray icon immediately.
+- Supports a static charging meter or optional five-stage (empty/25/50/75/100%) and smooth fill animations while
+  retaining the real percentage in numeric icon modes.
+- Preserves the original battery percentage, charge status, tooltip, and start-with-system functionality.
 
-**Supported device:** Steam Controller (2026). Other controllers are unsupported.
-[**Download the latest build here!**](https://github.com/Pixel1011/Steam-Controller-Battery-Monitor/releases/latest)
+The tray menu includes:
 
-#### Windows
-1. Extract the files and run executable
-2. Observe battery percentage in tray
-3. Yippee!
+- **Open Big Picture**
+- **Open Big Picture on Controller Wake**
+- **Open Steam**
+- **Open Friends**
+- **Open Friends on Big Picture Exit**
+- **Tray Icon > Battery / Number / Battery + Number**
+- **Tray Icon > Customize...**
+- **Set Default Window Positions**
+- **Clear Saved Window Positions**
+- **Start with system**
+- **Exit**
 
-#### On Linux
-1. Install libhid and Qt6 libs, if not already installed:
-   - Debian/Ubuntu:
-     `sudo apt install libhidapi-dev libqt6core6 libqt6gui6 qt6-wayland`
-   - Arch:
-     `sudo pacman -S hidapi qt6-base qt6-wayland`
-2. Extract files and run executable
-3. Observe battery percentage in tray
-4. Yippee!
+Settings are stored with Qt's platform-native `QSettings` backend. Selecting **Set Default Window Positions** again
+overwrites each currently visible Steam/Friends layout. If only one of those windows is visible, only that saved layout
+is updated. The **Open Steam** and **Open Friends** actions apply the corresponding saved layout after opening the
+window.
 
+### Recommended Controller-Off Chord
+
+If **Open Big Picture on Controller Wake** is enabled, configure Steam's controller power-off chord to exit Big Picture
+at the same time. In Steam, open **Settings > Controller > Guide Button Chord Layout**, edit the chord used to turn off
+the controller (commonly **Guide/Steam + Y**), and add **Exit Big Picture** as an extra command. Steam's wording may vary
+between client versions.
+
+This makes the workflow symmetrical: turning on the controller opens Big Picture, while the power-off chord exits Big
+Picture and allows this utility to reopen the desktop Steam and Friends windows according to your saved preferences.
+
+## Platform Support
+
+**Supported device:** Steam Controller (2026), including the tested Valve `28DE:1302` wired interface and `28DE:1304`
+wireless puck. Other controllers are unsupported.
+
+### Windows
+
+Windows has full intended support. A WinEvent hook tracks Steam top-level window creation, destruction, visibility, and
+title changes. Steam and Friends layouts are captured/restored with Win32 APIs and clamped to an available display when
+a saved monitor no longer exists.
+
+### Linux X11
+
+Battery monitoring, Steam URI actions, Big Picture lifecycle detection, and Steam/Friends layout management are
+supported. Layout management uses EWMH/X11 APIs and monitor identities exposed by Qt.
+
+### Linux Wayland
+
+Battery monitoring, tray icon modes, settings, Steam URI actions, and start-with-system remain available. Generic
+Wayland does not permit applications to enumerate or move other applications' windows, so Big Picture exit detection
+and the automatic/manual external-window layout features are disabled for a native Wayland session. XWayland behavior
+depends on how the desktop session exposes Steam's windows.
+
+Big Picture identification uses Steam's top-level window title (`Big Picture`/`GamepadUI`) while restricting candidates
+to `steam` and `steamwebhelper` processes. Alt-tabbing, minimizing, or hiding the window does not count as an exit; the
+window must disappear for a sustained 2.5 seconds.
+
+## Running
+
+### Windows
+
+Extract the Windows release and run `Steam-Controller-Utility.exe`. Steam must be registered as the handler for
+`steam://` URLs.
+
+### Linux
+
+Install the Qt 6, HIDAPI, and X11 runtime libraries used by your distribution, then run `./scbattery-monitor`.
+HID permissions may require a suitable udev rule for Valve devices.
 
 ## Compiling
 
-**Clone with submodules:**
-``git clone --recurse-submodules https://github.com/Pixel1011/Steam-Controller-Battery-Monitor.git``
+Clone with submodules:
 
+```bash
+git clone --recurse-submodules https://github.com/CasketPizza/Steam-Controller-Battery-Monitor.git
+cd Steam-Controller-Battery-Monitor
+```
 
-**Build (Linux / WSL)**
-
+### Debian/Ubuntu
 
 ```bash
 sudo apt update
-sudo apt install build-essential pkg-config libhidapi-dev qt6-base-dev qt6-base-dev-tools
+sudo apt install build-essential pkg-config libhidapi-dev libqt6core6 libqt6gui6 \
+  qt6-base-dev qt6-base-dev-tools libx11-dev
 make
 ```
 
-**Build (Windows, MSYS2 UCRT64)**
+Install `qt6-wayland` as well when running Qt applications in a native Wayland session.
+
+### Arch Linux
+
+```bash
+sudo pacman -S --needed base-devel hidapi qt6-base libx11
+make
+```
+
+Install `qt6-wayland` as well for native Wayland sessions.
+
+### Windows (MSYS2 UCRT64)
+
 ```bash
 pacman -Syu
-
 pacman -S mingw-w64-ucrt-x86_64-gcc \
-          mingw-w64-ucrt-x86_64-hidapi \
-          mingw-w64-ucrt-x86_64-ffmpeg \
-          mingw-w64-ucrt-x86_64-make \
-          mingw-w64-ucrt-x86_64-pkgconf \
-          mingw-w64-ucrt-x86_64-ninja \
-          mingw-w64-ucrt-x86_64-qt6-base
-
-make
+  mingw-w64-ucrt-x86_64-hidapi \
+  mingw-w64-ucrt-x86_64-make \
+  mingw-w64-ucrt-x86_64-pkgconf \
+  mingw-w64-ucrt-x86_64-qt6-base
+mingw32-make release
 ```
-## Changelog
 
-[v1.0.0]
-Initial Release
+The project uses C++20 and builds directly through the included `Makefile`.
 
-## TODO in future:
-- battery monitoring functionality to measure capacity and battery loss over time
-- with above, also add time till charged metric
+## Credits
 
-I would appreciate stars, they make me happy :3c
-
-If you find this cool, feel free to check out [SteamHapticsPlayer](https://github.com/Pixel1011/SteamHapticsPlayer) to play audio files on your controller!
+The original battery monitor and its TritonLib HID support were created by
+[Pixel1011](https://github.com/Pixel1011). TritonLib includes controller data structures derived from SDL under SDL's
+zlib license notice. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for dependency licensing details.

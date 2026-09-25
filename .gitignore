@@ -1,3 +1,5 @@
-scbattery-monitor.exe
-scbattery-monitor
-dist
+/scbattery-monitor.exe
+/scbattery-monitor
+/app_icon.o
+/dist/
+/releases/
