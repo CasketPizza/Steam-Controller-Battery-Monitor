@@ -19,6 +19,12 @@ A lightweight Qt 6 tray utility for the Steam Controller (2026), based on
 The utility monitors the controller through HIDAPI, displays its battery level, and coordinates Steam's desktop and
 Big Picture interfaces.
 
+![Steam Controller Battery Monitor tray preview](https://img.pixelator.xyz/V5hxYuYw.png)
+
+[![Support Pixel1011 on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N6145I0V)
+
+Donations are optional and support the original project's author.
+
 ## Features
 
 - Can open `steam://open/bigpicture` when Raw HID controller reports resume after a connect or wake. This is opt-in and
