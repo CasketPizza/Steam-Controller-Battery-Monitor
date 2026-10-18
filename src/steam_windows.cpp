@@ -165,15 +165,20 @@ bool restoreLayout(HWND window, const WindowLayout& layout) {
   const QRect available(info.rcWork.left, info.rcWork.top, info.rcWork.right - info.rcWork.left,
                         info.rcWork.bottom - info.rcWork.top);
   const QRect target = clampToAvailableGeometry(layout.geometry, available);
-  const POINT offset = workspaceOffset();
   WINDOWPLACEMENT placement{};
   placement.length = sizeof(placement);
   if (!GetWindowPlacement(window, &placement)) return false;
-  placement.flags = 0;
-  placement.showCmd = layout.maximized ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL;
-  placement.rcNormalPosition = RECT{target.left() - offset.x, target.top() - offset.y,
-                                    target.right() + 1 - offset.x, target.bottom() + 1 - offset.y};
-  return SetWindowPlacement(window, &placement) != FALSE;
+  placement.flags &= ~WPF_RESTORETOMAXIMIZED;
+  placement.showCmd = SW_SHOWNOACTIVATE;
+  if (!SetWindowPlacement(window, &placement)) return false;
+
+  // SetWindowPlacement uses workspace coordinates and can apply a top/left taskbar offset a second time.
+  // Only use it above to normalize state; SetWindowPos takes the exact screen coordinates calculated here.
+  const UINT flags = SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER;
+  if (!SetWindowPos(window, nullptr, target.x(), target.y(), target.width(), target.height(), flags)) return false;
+
+  if (layout.maximized) ShowWindow(window, SW_MAXIMIZE);
+  return true;
 }
 
 std::atomic_bool* activeWindowChangeFlag = nullptr;
